@@ -7,14 +7,14 @@ Stackdriver's public REST API
 Examples
 --------
 
-*Instantiate an api instance*
+**Instantiate an api instance**
 
 .. sourcecode:: python
 
     from stackdriver import StackApi
     api = StackApi(apikey='yourapikey')
 
-*Users*
+**Users**
 
 .. sourcecode:: python
 
@@ -24,7 +24,7 @@ Examples
     # grab a single user
     print api.Users.get(id=2)
 
-*Groups*
+**Groups**
 
 .. sourcecode:: python
 
@@ -54,4 +54,6 @@ Examples
             },
         ]
     })
+
+    group.create()
 
