@@ -1,0 +1,57 @@
+Stackdriver API Client Library for Python
+=========================================
+
+The Stackdriver API Client Library is a thin wrapper for accessing
+Stackdriver's public REST API
+
+Examples
+--------
+
+*Instantiate an api instance*
+
+.. sourcecode:: python
+
+    from stackdriver import StackApi
+    api = StackApi(apikey='yourapikey')
+
+*Users*
+
+.. sourcecode:: python
+
+    # grab a list of users
+    print api.Users.list()
+
+    # grab a single user
+    print api.Users.get(id=2)
+
+*Groups*
+
+.. sourcecode:: python
+
+    # grab a list of groups
+    print api.Groups.list()
+
+    # grab a single group
+    print api.Groups.get(id=67)
+
+    # create a new group
+    group = api.Groups({
+        'conjunction': 'And',
+        'name': 'Production Webservers',
+        'parent_id': None,
+        'cluster': False,
+        'conditions': [
+            {
+                'type': 'name',
+                'comparison': 'starts_with',
+                'value': 'web'
+            },
+            {
+                'type': 'tag',
+                'comparison': 'equals',
+                'name': 'environment',  # this assumes an environment tag on all production machines
+                'value': 'production'
+            },
+        ]
+    })
+
