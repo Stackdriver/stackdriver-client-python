@@ -35,7 +35,7 @@ class RestApi(object):
         Base class for accessing REST services
 
         :param entrypoint_path: The http or https uri to the api
-        :param version: version of the api to call - if present this gets added to the end of the uri as "<version>/"
+        :param version: version of the api we support
         :param apikey: the stackdriver apikey to use for authentication
         :param username: username for basic auth - this is here for completeness but for the stackdriver apis auth should be done using the apikey
         :param password: password for basic auth - this is here for completeness but for the stackdriver apis auth should be done using the apikey
@@ -45,9 +45,6 @@ class RestApi(object):
         entrypoint_uri = entrypoint_uri.strip()
         if entrypoint_uri[-1] != '/':
             entrypoint_uri += '/'
-
-        if version:
-            entrypoint_uri = entrypoint_uri % {'version': version}
 
         self._entrypoint_uri = entrypoint_uri
         self._apikey = apikey
@@ -74,12 +71,16 @@ class RestApi(object):
         return headers
 
     def _gen_full_endpoint(self, endpoint_path):
+        if endpoint_path.startswith('/'):
+            endpoint_path = endpoint_path[1:]
+
         return '%s%s' % (self._entrypoint_uri, endpoint_path)
 
     def get(self, endpoint, params=None, headers=None):
         headers = self._merge_headers(headers)
         uri = self._gen_full_endpoint(endpoint)
 
+        logger.debug('GET %s', uri, extra={'params': params})
         r = requests.get(uri, params=params, headers=headers)
         r.raise_for_status()
         return r.json()
@@ -88,6 +89,7 @@ class RestApi(object):
         headers = self._merge_headers(headers, is_post=True)
         uri = self._gen_full_endpoint(endpoint)
 
+        logger.debug('POST %s', uri, extra={'data': data})
         r = requests.post(uri, data=json.dumps(data), headers=headers)
         r.raise_for_status()
         return r.json()
@@ -95,8 +97,18 @@ class RestApi(object):
     def put(self, endpoint, data=None, headers=None):
         pass
 
-    def delete(self, endpoint, params=None, headers=None):
-        pass
+    def delete(self, endpoint, headers=None):
+        headers = self._merge_headers(headers, is_post=True)
+        uri = self._gen_full_endpoint(endpoint)
+
+        logger.debug('DELETE %s', uri)
+        r = requests.delete(uri, headers=headers)
+        r.raise_for_status()
+        return r.json()
+
+    @property
+    def api_version(self):
+        return self._version
 
     @property
     def entrypoint(self):

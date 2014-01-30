@@ -125,11 +125,20 @@ class AnonStackInterface(object):
 
         return result['data']
 
+    def _versioned_endpoint(self, endpoint, id=None):
+        uri = 'v%s/%s' % (self._rest_client.api_version, endpoint)
+        if id is not None:
+            uri = '%s%s/' % (uri, id)
+
+        return uri
+
     def get(self, id=None, params=None, headers=None):
         """ Call GET on the endpoint """
-        endpoint = self._endpoint
+        endpoint = None
         if id:
-            endpoint = '%s%s/' % (endpoint, id)
+            endpoint = self._versioned_endpoint(self._endpoint, id)
+        else:
+            endpoint = self._versioned_endpoint(self._endpoint)
 
         rest_result = self._rest_client.get(endpoint, params=params, headers=headers)
 
@@ -142,7 +151,9 @@ class AnonStackInterface(object):
         This is mainly for queries with json payloads.  For creation actions
         use the create method on the AnonStackObject class
         """
-        resp = self._rest_client.post(self._endpoint, data=data, headers=headers)
+        endpoint = self._versioned_endpoint(self._endpoint)
+
+        resp = self._rest_client.post(endpoint, data=data, headers=headers)
 
         result = self._unwind_result(resp)
 
@@ -186,7 +197,13 @@ class AnonStackObject(AnonStackInterface, dict):
         return '%s(%s)' % (self._rest_class, dict.__repr__(self))
 
     def create(self, headers=None):
-        resp = self._rest_client.post(self._endpoint, data=self, headers=headers)
+        """ create an object record on the server """
+        resource = getattr(self, 'resource', None)
+        if resource:
+            raise ValueError('Can not create, this resource already exists.')
+
+        endpoint = self._versioned_endpoint(self._endpoint)
+        resp = self._rest_client.post(endpoint, data=self, headers=headers)
 
         data = self._unwind_result(resp)
 
@@ -196,8 +213,27 @@ class AnonStackObject(AnonStackInterface, dict):
 
         return self
 
+    def delete(self, headers=None):
+        """ delete the object record on the server """
+        resource = getattr(self, 'resource', None)
+        if resource is None:
+            raise ValueError('Can not delete, this is not a resource from the server.')
+
+        resp = self._rest_client.delete(resource, headers=headers)
+
+        data = self._unwind_result(resp)
+
+        # merge response in
+        for key, value in data.iteritems():
+            self[key] = value
+
+        return self
+
+
 class StackApi(object):
-    def __init__(self, entrypoint_uri='https://api.stackdriver.com/', version='0.2', apikey=None):
+    API_VERSION = '0.2'
+
+    def __init__(self, entrypoint_uri='https://api.stackdriver.com/', version=API_VERSION, apikey=None):
         if not apikey:
             raise KeyError('apikey must be specified when talking to the Stackdriver API')
 
@@ -205,8 +241,6 @@ class StackApi(object):
         entrypoint_uri = entrypoint_uri.strip()
         if entrypoint_uri[-1] != '/':
             entrypoint_uri += '/'
-
-        entrypoint_uri += 'v%(version)s/'
 
         self._rest_client = RestApi(entrypoint_uri, version, apikey, useragent='Stackdriver Python Client %s' % __version__)
 

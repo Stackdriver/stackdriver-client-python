@@ -59,6 +59,11 @@ Examples
 
     print group.id
 
+    # delete the group
+    group.delete()
+
+    print group.deleted_epoch
+
 **Resolve**
 
 .. sourcecode:: python
