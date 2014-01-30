@@ -126,6 +126,7 @@ class AnonStackInterface(object):
         return result['data']
 
     def get(self, id=None, params=None, headers=None):
+        """ Call GET on the endpoint """
         endpoint = self._endpoint
         if id:
             endpoint = '%s%s/' % (endpoint, id)
@@ -133,6 +134,19 @@ class AnonStackInterface(object):
         rest_result = self._rest_client.get(endpoint, params=params, headers=headers)
 
         return self._wrap_rest_data(self._unwind_result(rest_result))
+
+    def post(self, data=None, headers=None):
+        """
+        Call POST on the endpoint
+
+        This is mainly for queries with json payloads.  For creation actions
+        use the create method on the AnonStackObject class
+        """
+        resp = self._rest_client.post(self._endpoint, data=data, headers=headers)
+
+        result = self._unwind_result(resp)
+
+        return result
 
     def list(self, params=None, headers=None):
         return self.get(params=params, headers=headers)

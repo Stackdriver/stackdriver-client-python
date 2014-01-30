@@ -57,3 +57,22 @@ Examples
 
     group.create()
 
+    print group.id
+
+**Resolve**
+
+.. sourcecode:: python
+    # query a resource name to resolve to a unique id
+    # if the name exists for multiple resources (such as across availability
+    # zones and different resource types) return them all
+
+    # since resolve takes a json query object we use post instead of get to
+    # avoid URL length limits - in REST terms you are creating an adhoc query
+    # which then gets executed on the server
+
+    resources = api.Resolve.post({
+        'name': 'web-1'
+    })
+
+    print resources
+
