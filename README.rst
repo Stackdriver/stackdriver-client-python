@@ -67,6 +67,7 @@ Examples
 **Resolve**
 
 .. sourcecode:: python
+
     # query a resource name to resolve to a unique id
     # if the name exists for multiple resources (such as across availability
     # zones and different resource types) return them all
