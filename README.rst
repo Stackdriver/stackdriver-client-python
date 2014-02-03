@@ -2,7 +2,7 @@ Stackdriver API Client Library for Python
 =========================================
 
 *Note: The Stackdriver Public REST APIs are currently in Alpha testing.
-They may change often.  You can read the current REST API docs at https://docs.stackdriver.com/api*
+They may change often.  You can read the current REST API docs at http://docs.stackdriver.com/api*
 
 The Stackdriver API Client Library is a thin wrapper for accessing
 Stackdriver's public REST API
