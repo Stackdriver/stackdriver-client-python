@@ -233,8 +233,8 @@ class AnonStackObject(AnonStackInterface, dict):
 class StackApi(object):
     API_VERSION = '0.2'
 
-    def __init__(self, entrypoint_uri='https://api.stackdriver.com/', version=API_VERSION, apikey=None):
-        if not apikey:
+    def __init__(self, entrypoint_uri='https://api.stackdriver.com/', version=API_VERSION, apikey=None, custom_headers=False):
+        if not apikey and not custom_headers:
             raise KeyError('apikey must be specified when talking to the Stackdriver API')
 
         # add the version template to the entrypoint

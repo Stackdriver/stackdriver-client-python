@@ -58,7 +58,8 @@ class RestApi(object):
         if extra is not None:
             headers = copy.copy(extra)
 
-        headers['x-stackdriver-apikey'] = self._apikey
+        if self._apikey:
+            headers['x-stackdriver-apikey'] = self._apikey
         headers['x-stackdriver-version'] = self._version
 
         if is_post:
