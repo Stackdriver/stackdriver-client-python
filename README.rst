@@ -22,20 +22,20 @@ Examples
 .. sourcecode:: python
 
     # grab a list of users
-    print api.Users.list()
+    print api.Users.LIST()
 
     # grab a single user
-    print api.Users.get(id=2)
+    print api.Users.GET(id=2)
 
 **Groups**
 
 .. sourcecode:: python
 
     # grab a list of groups
-    print api.Groups.list()
+    print api.Groups.LIST()
 
     # grab a single group
-    print api.Groups.get(id=67)
+    print api.Groups.GET(id=67)
 
     # create a new group
     group = api.Groups({
@@ -58,12 +58,12 @@ Examples
         ]
     })
 
-    group.create()
+    group.CREATE()
 
     print group.id
 
     # delete the group
-    group.delete()
+    group.DELETE()
 
     print group.deleted_epoch
 
@@ -79,7 +79,7 @@ Examples
     # avoid URL length limits - in REST terms you are creating an adhoc query
     # which then gets executed on the server
 
-    resources = api.Resolve.post({
+    resources = api.Resolve.POST({
         'name': 'web-1'
     })
 
