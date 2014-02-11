@@ -13,7 +13,7 @@ except ImportError:
 packages = ['stackdriver']
 
 install_reqs_objs = parse_requirements('requirements.txt')
-requires = [str(ir.req) for ir in install_reqs]
+requires = [str(ir.req) for ir in install_req_objs]
 
 with open('README.rst') as f:
     readme = f.read()
