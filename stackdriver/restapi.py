@@ -96,7 +96,13 @@ class RestApi(object):
         return r.json()
 
     def put(self, endpoint, data=None, headers=None):
-        pass
+        headers = self._merge_headers(headers, is_post=True)
+        uri = self._gen_full_endpoint(endpoint)
+
+        logger.debug('PUT %s', uri, extra={'data': data})
+        r = requests.put(uri, data=json.dumps(data), headers=headers)
+        r.raise_for_status()
+        return r.json()
 
     def delete(self, endpoint, headers=None):
         headers = self._merge_headers(headers, is_post=True)

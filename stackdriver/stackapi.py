@@ -125,33 +125,37 @@ class AnonStackInterface(object):
 
         return result['data']
 
-    def _versioned_endpoint(self, endpoint, id=None):
+    def _versioned_endpoint(self, endpoint, id=None, action=None):
         uri = 'v%s/%s' % (self._rest_client.api_version, endpoint)
         if id is not None:
             uri = '%s%s/' % (uri, id)
+        if action is not None:
+            uri = '%s%s/' % (uri, action)
 
         return uri
 
-    def get(self, id=None, params=None, headers=None):
-        """ Call GET on the endpoint """
+    def GET(self, id=None, params=None, action=None, headers=None):
+        """ Call GET on the endpoint
+
+            :param id: if this is specified tack on an id to the end of the URL for requesting a specific resource
+            :param params: if a dictionary is sent in add the items as part of the URL's query string
+            :param action: if specified call an action on a specified resource (adds the action at the end of the url)
+        """
         endpoint = None
-        if id:
-            endpoint = self._versioned_endpoint(self._endpoint, id)
-        else:
-            endpoint = self._versioned_endpoint(self._endpoint)
+        endpoint = self._versioned_endpoint(self._endpoint, id, action)
 
         rest_result = self._rest_client.get(endpoint, params=params, headers=headers)
 
         return self._wrap_rest_data(self._unwind_result(rest_result))
 
-    def post(self, data=None, headers=None):
+    def POST(self, data=None, headers=None, action=None):
         """
         Call POST on the endpoint
 
         This is mainly for queries with json payloads.  For creation actions
         use the create method on the AnonStackObject class
         """
-        endpoint = self._versioned_endpoint(self._endpoint)
+        endpoint = self._versioned_endpoint(self._endpoint, action=action)
 
         resp = self._rest_client.post(endpoint, data=data, headers=headers)
 
@@ -159,8 +163,8 @@ class AnonStackInterface(object):
 
         return result
 
-    def list(self, params=None, headers=None):
-        return self.get(params=params, headers=headers)
+    def LIST(self, params=None, headers=None):
+        return self.GET(params=params, headers=headers)
 
 
 class AnonStackObject(AnonStackInterface, dict):
@@ -196,9 +200,9 @@ class AnonStackObject(AnonStackInterface, dict):
     def __repr__(self):
         return '%s(%s)' % (self._rest_class, dict.__repr__(self))
 
-    def create(self, headers=None):
+    def CREATE(self, headers=None):
         """ create an object record on the server """
-        resource = getattr(self, 'resource', None)
+        resource = self.get('resource', None)
         if resource:
             raise ValueError('Can not create, this resource already exists.')
 
@@ -213,9 +217,37 @@ class AnonStackObject(AnonStackInterface, dict):
 
         return self
 
-    def delete(self, headers=None):
+    def _get_endpoint(self, action=None):
+        endpoint = self.get('resource')
+        if not endpoint:
+            id = self.get('id')
+            endpoint = self._versioned_endpoint(self._endpoint, id)
+
+        if action is not None:
+            endpoint = '%s%s/' % (endpoint, action)
+
+        return endpoint
+
+    def PUT(self, data=None, action=None, headers=None):
+        endpoint = self._get_endpoint(action)
+        resp = self._rest_client.put(endpoint, data=data, headers=headers)
+
+        print resp
+        result = self._unwind_result(resp)
+
+        return result
+
+    def GET(self, params=None, action=None, headers=None):
+        endpoint = self._get_endpoint(action)
+        resp = self._rest_client.get(endpoint, params=params, headers=headers)
+
+        result = self._unwind_result(resp)
+
+        return result
+
+    def DELETE(self, headers=None):
         """ delete the object record on the server """
-        resource = getattr(self, 'resource', None)
+        resource = self.get('resource')
         if resource is None:
             raise ValueError('Can not delete, this is not a resource from the server.')
 
