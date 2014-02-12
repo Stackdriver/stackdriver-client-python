@@ -23,14 +23,27 @@ under the License.
 
 import requests
 import copy
+import types
 
 import json
 
 import logging
 logger = logging.getLogger(__name__)
 
+def _wrap_transport_decorator(transport_func, wrapper, userdata):
+    def inner(*args, **kwargs):
+        return wrapper(transport_func, userdata=userdata, func_args=args, func_kwargs=kwargs)
+
+    return inner
+
+def transport_func(func):
+    """ Decorates each of the transport functions that can get wrapped by a transport_controller """
+    func._is_transport_func = True
+    return func
+
 class RestApi(object):
-    def __init__(self, entrypoint_uri, version=None, apikey=None, username=None, password=None, useragent=None):
+
+    def __init__(self, entrypoint_uri, version=None, apikey=None, username=None, password=None, useragent=None, transport_controller=None, transport_userdata=None):
         """
         Base class for accessing REST services
 
@@ -39,6 +52,8 @@ class RestApi(object):
         :param apikey: the stackdriver apikey to use for authentication
         :param username: username for basic auth - this is here for completeness but for the stackdriver apis auth should be done using the apikey
         :param password: password for basic auth - this is here for completeness but for the stackdriver apis auth should be done using the apikey
+        :param transport_controller: if defined run this function before each network call
+        :param transport_userdata: data to send to the transport_controller
         """
 
         # always end with a slash
@@ -52,6 +67,23 @@ class RestApi(object):
         self._password = password
         self._version = version
         self._useragent = useragent
+
+        if transport_controller:
+            self._decorate_transport_funcs(transport_controller, transport_userdata)
+
+    def _decorate_transport_funcs(self, controller, userdata):
+        """ decorate all methods that have an attribute of _is_transport_func set to True
+            skip any methods that start with an underscore (_)
+
+            SEE @transport_func decorator
+        """
+        for method_name in dir(self):
+            if method_name.startswith('_'):
+                continue
+
+            method = getattr(self, method_name, None)
+            if isinstance(method, types.MethodType):
+                setattr(self, method_name, _wrap_transport_decorator(method, controller, userdata))
 
     def _merge_headers(self, extra, is_post=False):
         headers = {}
@@ -77,6 +109,7 @@ class RestApi(object):
 
         return '%s%s' % (self._entrypoint_uri, endpoint_path)
 
+    @transport_func
     def get(self, endpoint, params=None, headers=None):
         headers = self._merge_headers(headers)
         uri = self._gen_full_endpoint(endpoint)
@@ -86,6 +119,7 @@ class RestApi(object):
         r.raise_for_status()
         return r.json()
 
+    @transport_func
     def post(self, endpoint, data=None, headers=None):
         headers = self._merge_headers(headers, is_post=True)
         uri = self._gen_full_endpoint(endpoint)
@@ -95,6 +129,7 @@ class RestApi(object):
         r.raise_for_status()
         return r.json()
 
+    @transport_func
     def put(self, endpoint, data=None, headers=None):
         headers = self._merge_headers(headers, is_post=True)
         uri = self._gen_full_endpoint(endpoint)
@@ -104,6 +139,7 @@ class RestApi(object):
         r.raise_for_status()
         return r.json()
 
+    @transport_func
     def delete(self, endpoint, headers=None):
         headers = self._merge_headers(headers, is_post=True)
         uri = self._gen_full_endpoint(endpoint)

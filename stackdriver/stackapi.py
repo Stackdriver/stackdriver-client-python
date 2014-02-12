@@ -265,8 +265,50 @@ class AnonStackObject(AnonStackInterface, dict):
 class StackApi(object):
     API_VERSION = '0.2'
 
-    def __init__(self, entrypoint_uri='https://api.stackdriver.com/', version=API_VERSION, apikey=None, custom_headers=False):
-        if not apikey and not custom_headers:
+    def __init__(self, entrypoint_uri='https://api.stackdriver.com/', version=API_VERSION, apikey=None, use_custom_headers=False, transport_controller=None, transport_userdata=None):
+        """
+        Entry point for the Stackdriver API
+
+        :param entrypoint_uri: The url you wish to talk to
+        :param version: The API version you wish to talk to
+        :param apikey: The auth key used to talk to the API
+            You can generate keys at https://app.stackdriver.com/settings/apikeys
+            This must be set unless use_custom_headers or transport_controller is set
+        :param use_custom_headers: If True the apikey does not have to be set and we assume
+            you will be setting the key in the headers of each call
+        :param transport_userdata: data sent to the transport_controller
+        :param transport_controller: Advanced, if set all network calls will be decorated
+            with this function. Use it to add advanced functionality such as key rotation
+            and retries. A transport controller looks like this:
+
+                from requests import HTTPError
+                import sys
+
+                def controller(transport_func, userdata=None, func_args=None, func_kwargs=None):
+                    key_rotation = ['foo', 'bar', 'baz']
+                    headers = func_kwargs.get('headers')
+                    if not headers:
+                        headers = {}
+
+                    last_exception = None
+                    for key in key_rotation:
+                        try:
+                            headers['x-stackdriver-apikey'] = key
+                            func_kwargs['headers'] = headers
+                            return transport_func(*func_args, **func_kwargs)
+
+                        except HTTPError as e:
+                            if e.response.status_code == 401: # Unauthorized
+                                # we want to rotate the keys so do nothing (you can also log here)
+                                last_exception = sys.exc_info()
+                            else:
+                                # reraise all other errors
+                                raise
+
+                     # If we get here reraise the last Unauthorized exception in the original context
+                     raise last_exception[1], None, last_exception[2]
+        """
+        if not apikey and not use_custom_headers and not transport_controller:
             raise KeyError('apikey must be specified when talking to the Stackdriver API')
 
         # add the version template to the entrypoint
@@ -274,7 +316,12 @@ class StackApi(object):
         if entrypoint_uri[-1] != '/':
             entrypoint_uri += '/'
 
-        self._rest_client = RestApi(entrypoint_uri, version, apikey, useragent='Stackdriver Python Client %s' % __version__)
+        self._rest_client = RestApi(entrypoint_uri,
+                                    version,
+                                    apikey,
+                                    useragent='Stackdriver Python Client %s' % __version__,
+                                    transport_controller=transport_controller,
+                                    transport_userdata=transport_userdata)
 
     def __getattr__(self, attr):
         """
