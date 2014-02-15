@@ -85,3 +85,22 @@ Examples
 
     print resources
 
+**Handling Server Errors**
+    from requests import HTTPError
+
+    try:
+        resources = api.Resolve.POST({
+            'misspelled_key': 'web-1'
+        })
+    except HTTPError as e:
+        # this should return:
+        # { 'code': 400,
+        #     'success': False
+        #    'error': u'Field validation error',
+        #    'errors': {
+        #        'name': "Field 'name' is required"
+        #     }
+        # }
+        #
+        print e.response.json()
+
