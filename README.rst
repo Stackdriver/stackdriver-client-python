@@ -86,6 +86,9 @@ Examples
     print resources
 
 **Handling Server Errors**
+
+.. sourcecode:: python
+
     from requests import HTTPError
 
     try:
