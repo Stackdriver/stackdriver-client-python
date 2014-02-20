@@ -1,8 +1,6 @@
 import os
 import sys
 
-import stackdriver
-
 from pip.req import parse_requirements
 
 try:
@@ -23,7 +21,7 @@ with open('LICENSE') as f:
 
 setup(
     name='stackdriver',
-    version=stackdriver.__version__,
+    version='0.2',
     description='Stackdriver Client APIs for Python',
     long_description=readme + '\n\n', # TODO: add a history file
     author='John (J5) Palmieri',
