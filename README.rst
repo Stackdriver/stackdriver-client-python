@@ -85,6 +85,18 @@ Examples
 
     print resources
 
+**Maintenance Mode**
+
+.. sourcecode:: python
+
+    # list all resources in maintenance mode
+    resources_in_maint_mode api.Alerting.Maintenance.Resources.GET()
+
+    # the list only contains id's and resource pointers
+    # rehydrate the resources
+    for resource in resources_in_maint_mode:
+        print resource.GET()
+
 **Handling Server Errors**
 
 .. sourcecode:: python
