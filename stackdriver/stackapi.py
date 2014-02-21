@@ -29,24 +29,19 @@ import logging
 logger = logging.getLogger(__name__)
 
 class AnonStackInterface(object):
-    def __init__(self, rest_class, client):
+    def __init__(self, rest_class, client, endpoint_prefix=''):
         """
         This is returned by the StackApi attrs and provides a generic interface for calling
         REST actions on endpoints.  We use this so the client doesn't have to be updated
         every time a new object is added to the API.  This can also be extended for
         known objects in order to provide convenience functions for specific objects.
-
-        FIXME: Right now we only deal with the base endpoint for an object but we
-               also need to deal with wrapped resources which have an id
-               This will be made easier once the refactor on using 'id' instead of
-               group_id, instance_id, etc. goes in
         """
 
         self._rest_class = rest_class
         self._rest_client = client
 
         # endpoint is always lowercase
-        self._endpoint = '%s/' % self._rest_class.lower()
+        self._endpoint = '%s%s/' % (endpoint_prefix, self._rest_class.lower())
 
     def __call__(self, data=None):
         """ If called with data create an AnonStackObject """
@@ -133,6 +128,18 @@ class AnonStackInterface(object):
             uri = '%s%s/' % (uri, action)
 
         return uri
+
+    def __getattr__(self, attr):
+        """
+        For any attr that starts with a capital letter and the rest are lowercase letters create a AnonStackInterface
+
+        __getattr__ will only trigger if the attr is not defined on the class
+        """
+        if attr[0].isupper() and attr[1:].islower():
+            # create an interface with the attr as the class for the endpoint
+            return AnonStackInterface(attr, self._rest_client, self._endpoint)
+        else:
+            raise AttributeError
 
     def GET(self, id=None, params=None, action=None, headers=None):
         """ Call GET on the endpoint
