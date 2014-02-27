@@ -224,6 +224,22 @@ class AnonStackObject(AnonStackInterface, dict):
 
         return self
 
+    def UPDATE(self, headers=None):
+        """ update an object record on the server """
+        resource = self.get('resource', None)
+        if not resource:
+            raise ValueError('Must have a resource to update.')
+
+        resp = self._rest_client.put(resource, data=self, headers=headers)
+
+        data = self._unwind_result(resp)
+
+        # merge response in
+        for key, value in data.iteritems():
+            self[key] = value
+
+        return self
+
     def _get_endpoint(self, action=None):
         endpoint = self.get('resource')
         if not endpoint:
