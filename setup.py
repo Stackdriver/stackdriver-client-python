@@ -10,8 +10,7 @@ except ImportError:
 
 packages = ['stackdriver']
 
-install_reqs_objs = parse_requirements('requirements.txt')
-requires = [str(ir.req) for ir in install_reqs_objs]
+requires = ["requires>=2.2"]
 
 with open('README.rst') as f:
     readme = f.read()
