@@ -28,6 +28,7 @@ from .restapi import RestApi
 import logging
 logger = logging.getLogger(__name__)
 
+
 class AnonStackInterface(object):
     def __init__(self, rest_class, client, endpoint_prefix=''):
         """
@@ -37,11 +38,11 @@ class AnonStackInterface(object):
         known objects in order to provide convenience functions for specific objects.
         """
 
-        self._rest_class = rest_class
+        self._rest_class = self._mapToRestClass(rest_class)
         self._rest_client = client
 
         # endpoint is always lowercase
-        self._endpoint = '%s%s/' % (endpoint_prefix, self._rest_class.lower())
+        self._endpoint = '%s%s/' % (endpoint_prefix, self._mapToRestClass(rest_class).lower())
 
     def __call__(self, data=None):
         """ If called with data create an AnonStackObject """
@@ -56,6 +57,24 @@ class AnonStackInterface(object):
 
     def __repr__(self):
         return '%s StackInterface (%s%s)' % (self._rest_class, self._rest_client.entrypoint, self._endpoint)
+
+    def _mapToRestClass(self, rest_class):
+        """
+            All rest classes are defined as lowercase id which can have underscores (e.g. load_balancers).
+            We map the python request to the endpoint with these rules:
+
+            if it starts with an uppercase character we insert underscores before any subsequent uppercase characters
+            and then lowercase the string, effectively turning any camel cased strings into an underscore delimited id
+        """
+        # Don't parse words that already have an underscore or those that don't need underscores
+        if '_' in rest_class or sum(rc.isupper() for rc in rest_class) == 1:
+            return rest_class
+        underscore_str = rest_class[0]
+        for rc in rest_class[1:]:
+            if rc.isupper():
+                underscore_str += '_'
+            underscore_str += rc
+        return underscore_str
 
     def _wrap_rest_data_one(self, item):
         """ Wrap the returned item in an AnonStackObject """
@@ -131,11 +150,11 @@ class AnonStackInterface(object):
 
     def __getattr__(self, attr):
         """
-        For any attr that starts with a capital letter and the rest are lowercase letters create a AnonStackInterface
+        For any attr that starts with a capital letter create a AnonStackInterface
 
         __getattr__ will only trigger if the attr is not defined on the class
         """
-        if attr[0].isupper() and attr[1:].islower():
+        if attr[0].isupper():
             # create an interface with the attr as the class for the endpoint
             return AnonStackInterface(attr, self._rest_client, self._endpoint)
         else:
@@ -348,11 +367,11 @@ class StackApi(object):
 
     def __getattr__(self, attr):
         """
-        For any attr that starts with a capital letter and the rest are lowercase letters create a AnonStackInterface
+        For any attr that starts with a capital letter create a AnonStackInterface
 
         __getattr__ will only trigger if the attr is not defined on the class
         """
-        if attr[0].isupper() and attr[1:].islower():
+        if attr[0].isupper():
             # create an interface with the attr as the class for the endpoint
             return AnonStackInterface(attr, self._rest_client)
         else:
